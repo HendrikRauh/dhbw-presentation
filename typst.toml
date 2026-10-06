@@ -1,0 +1,12 @@
+[package]
+name = "dhbw-presentation"
+version = "0.1.0"
+entrypoint = "src/lib.typ"
+authors = ["Hendrik Rauh <@HendrikRauh>"]
+license = "MIT"
+description = "DHBW corporate design theme for touying presentations"
+repository = "https://github.com/HendrikRauh/dhbw-presentation"
+keywords = ["dhbw", "touying", "presentation", "slide", "theme", "corporate"]
+categories = ["presentation"]
+compiler = "0.13.0"
+exclude = ["example/main.pdf"]
