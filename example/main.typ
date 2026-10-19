@@ -28,11 +28,12 @@
   ),
 )
 
-= Aufbau des DHBW-Themes
+= Aufbau des DHBW-Themes #subtitle[Gliederung, Inhalt und Gestaltung]
 
 == Gliederungsebenen
 
 - `=` → *Thema:* die erste `=` ist die Titelfolie, jede weitere eine Kapitelfolie
+- `#subtitle[..]` in einer `=`-Überschrift → Untertitel der Kapitelfolie
 - `==` → *Folientitel:* steht links oben in der Kopfzeile
 - `===` → *Zwischenüberschrift:* unterteilt den Folieninhalt
 
@@ -70,7 +71,7 @@ Tiefere Überschriften sind kleiner und heller gesetzt.
 
 #alert[Hinweis: Titel- und Kapitelfolie sind Übergangsseiten — sie haben weder Kopf- noch Fußzeile.]
 
-= Inhaltstypen
+= Inhaltstypen #subtitle[Listen, Mathematik, Tabellen und Code]
 
 == Listen, Formatierung und Hinweise
 
@@ -149,7 +150,7 @@ Inline-Mathematik wie $U_F approx 0.7 "V"$ die `math-font`.
 - Inhalt
 ```
 
-= Gestaltung
+= Gestaltung #subtitle[Fokusfolie, Farben und Datumsausgabe]
 
 == Fokusfolie
 
@@ -209,7 +210,7 @@ Monatsnamen noch nicht lokalisiert:
 - Heute: #format-date(datetime.today()) — so steht es auch in der Fußzeile
 - `config-info(date: datetime.today())` speist Titelfolie und Fußzeile
 
-= Schluss
+= Schluss #subtitle[Kernaussagen]
 
 == Kernaussagen
 

@@ -33,7 +33,7 @@ equations.
 == Slide title
 - Body
 
-= Next chapter
+= Next chapter #subtitle[A short chapter subtitle]
 == Another slide
 ```
 
@@ -58,6 +58,19 @@ transition pages: no header, no footer, no progress dot. Label a heading with
 `<touying:skip>` to suppress its slide, or pass `chapter-slides: false` to turn
 all of them off.
 
+Add a subtitle line below the chapter title with the `subtitle` marker:
+
+```typst
+= Grundlagen #subtitle[Elektronische Schaltkreise]
+```
+
+The marker renders as nothing everywhere else — in the heading itself, the
+header band, the outline and the footer topic. It feeds chapter slides only: the
+title slide keeps its subtitle from `config-info(subtitle:)`. The extra
+`#subtitle[..]` does not count as a text difference, so
+`= Deck title #subtitle[..]` with the identical `config-info(title:)` still
+skips the additional chapter slide.
+
 **Footer.** `date · authors · topic` on the left — the topic is
 `config-info(title:)` if you set it, otherwise the first heading — and the
 indicator on the right. `progress:` selects it: `"dots"` (default) draws the
@@ -73,7 +86,7 @@ Headings drive the layout:
 
 | Level | Meaning |
 | ----- | ------------------------------------------------------- |
-| `=` | Chapter — title slide (first), chapter slide (every other one, plus the first when `config-info(title:)` differs), groups the progress dots |
+| `=` | Chapter — title slide (first), chapter slide (every other one, plus the first when `config-info(title:)` differs), groups the progress dots. `#subtitle[..]` in the heading becomes the chapter subtitle |
 | `==` | Slide title — printed top left in the header band |
 | `===` | Sub-heading inside a slide |
 
@@ -115,7 +128,7 @@ The slide is only created when it has something to show: an empty array or a
 | `link-text` | `[www.dhbw.de]` | red link bottom left of title and chapter slides, `none` hides it |
 | `link-url` | `"https://www.dhbw.de"` | target of that link |
 | `auto-title-slide` | `true` | the first `=` renders the title slide, `false` for an explicit `#title-slide(..)` |
-| `chapter-slides` | `true` | every `=` after the first renders a `chapter-slide` |
+| `chapter-slides` | `true` | every `=` after the first renders a `chapter-slide`; `#subtitle[..]` in the heading fills its subtitle line |
 | `sources` | `none` | final slide: `bibliography(..)`, list of strings or content |
 | `sources-title`| `[Quellen]` | heading of that slide |
 
@@ -128,10 +141,13 @@ Additional named arguments are passed straight to touying
   matching `config-info` field (the link to `dhbw-theme(link-text: .., link-url: ..)`): authors as one line each, `date` printed as
   `5. Oktober 2026` via `format-date`, `meta` for extra lines; full logo top
   right, red `www.dhbw.de` bottom left (`link-text: none` hides it)
-- `chapter-slide(title, config, link-text, link-url, logo-height)` — the
-  chapter divider in the same layout without subtitle, authors or date;
-  `dhbw-theme` inserts it automatically, `#chapter-slide[Title]` also works on
-  its own
+- `chapter-slide(title, subtitle, config, link-text, link-url, logo-height)` —
+  the chapter divider in the same layout without authors or date, `subtitle`
+  prints the smaller grey line below the title; `dhbw-theme` inserts it
+  automatically and takes the subtitle from a `#subtitle[..]` marker in the
+  heading, `#chapter-slide([Title], subtitle: [Subtitle])` also works on its own
+- `subtitle[..]` — marker inside a level-1 heading: becomes the `subtitle` line
+  of that heading's `chapter-slide` and renders as nothing everywhere else
 - `focus-slide[...]` — full-bleed red slide for key messages
 - `progress-dots(..)` — the footer progress, also usable standalone: equal
   sized dots, one per logical slide, grouped by topic; `none` on appendix
