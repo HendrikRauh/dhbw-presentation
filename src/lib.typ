@@ -10,7 +10,7 @@
 ///     date: datetime.today(),
 ///   ),
 /// )
-/// = Topic
+/// = Topic #subtitle[Optional chapter subtitle]
 /// == Slide title
 /// - Body
 /// ```
@@ -256,15 +256,17 @@
   )
 })
 
-/// Chapter divider in the layout of the title slide, without presenters, date
-/// or subtitle. `dhbw-theme` inserts it before every level-1 heading after the
-/// first one.
+/// Chapter divider in the layout of the title slide, without presenters or
+/// date. `dhbw-theme` inserts it before every level-1 heading after the
+/// first one; `#subtitle[..]` inside such a heading fills the `subtitle` line.
 ///
 /// - title (content): the chapter title.
+/// - subtitle (content, none): smaller grey line below the title.
 /// - config (dictionary): touying configuration for this slide.
 /// - link-text, link-url, logo-height: as on `title-slide`.
 #let chapter-slide(
   title,
+  subtitle: none,
   config: (:),
   link-text: auto,
   link-url: auto,
@@ -281,6 +283,7 @@
     _title-style-body(
       self,
       title: title,
+      subtitle: subtitle,
       link-text: link-text,
       link-url: link-url,
       logo-height: logo-height,
@@ -312,6 +315,79 @@
 // Title and chapter slides driven by level-1 headings
 // ---------------------------------------------------------------------------
 
+/// Attaches a subtitle to a level-1 heading for the chapter slide generated
+/// from it: `= Grundlagen #subtitle[Elektronische Schaltkreise]`. The marker
+/// renders as nothing — in the heading itself, the header band, the outline
+/// and the footer topic. It only feeds chapter slides; the title slide takes
+/// its subtitle from `config-info(subtitle:)`.
+#let subtitle(body) = metadata((dhbw-subtitle: body))
+
+/// Flattens `body` to an array: `f` is called on every content element and
+/// its result is appended, so `f` returns `()` for elements it ignores.
+#let _scan(it, f) = {
+  if type(it) != content {
+    ()
+  } else {
+    f(it) + it.fields().values().map(v =>
+      if type(v) == content { _scan(v, f) } else if type(v) == array {
+        v.map(x => if type(x) == content { _scan(x, f) } else { () }).sum(
+          default: (),
+        )
+      } else { () }
+    ).sum(default: ())
+  }
+}
+
+/// The subtitle attached to a heading via `#subtitle[..]`, or `none`. A marker
+/// is a `metadata` element whose dictionary carries the `dhbw-subtitle` key.
+#let _is-subtitle-marker(it) = (
+  it.func() == metadata and type(it.value) == dictionary and
+  "dhbw-subtitle" in it.value
+)
+
+#let _heading-subtitle(body) = {
+  let found = _scan(body, it =>
+    if _is-subtitle-marker(it) { (it.value.dhbw-subtitle,) } else { () })
+  if found == () { none } else { found.first() }
+}
+
+/// The function of the `space` element between two words — typst does not
+/// export it under a name, so it is taken from the content `[ ]`.
+#let _blank = [ ].func()
+
+/// Whether `it` is whitespace (a `space` element), as left over by a dropped
+/// `#subtitle[..]` marker.
+#let _is-blank(it) = type(it) == content and it.func() == _blank
+
+/// `body` without its `#subtitle[..]` markers. The deck title is compared
+/// against the first heading to decide whether that heading needs its own
+/// chapter slide — a marker must not count as a text difference, so the
+/// whitespace the marker syntax leaves behind is collapsed as well:
+/// `= Titel #subtitle[..]` equals the deck title `[Titel]`.
+#let _strip-subtitle(body) = {
+  if type(body) != content {
+    body
+  } else if body.func() == metadata {
+    if _is-subtitle-marker(body) { none } else { body }
+  } else if body.has("children") {
+    let kept = ()
+    for child in body.children {
+      let child = _strip-subtitle(child)
+      if child == none { continue }
+      if _is-blank(child) and (kept == () or _is-blank(kept.last())) {
+        continue
+      }
+      kept.push(child)
+    }
+    while kept != () and _is-blank(kept.last()) { kept = kept.slice(0, -1) }
+    kept.sum(default: none)
+  } else if utils.is-styled(body) {
+    utils.reconstruct-styled(body, _strip-subtitle(body.child))
+  } else {
+    body
+  }
+}
+
 #let _is-section(it) = utils.is-heading(it) and it.depth == 1
 
 /// `touying:skip` leaves a heading alone, `touying:unoutlined` marks an
@@ -322,13 +398,16 @@
 
 /// Walks the document and inserts a slide in front of every level-1 heading:
 /// the first one the title slide (with `auto-title-slide`), every following one
-/// a chapter slide (with `chapter-slides`). The heading stays *after* the
-/// inserted slide, so touying attaches it to the first content slide of its
+/// a chapter slide (with `chapter-slides`). A `#subtitle[..]` inside a heading
+/// becomes the subtitle of its chapter slide (the title slide keeps its
+/// subtitle from `config-info`). The heading stays *after* the inserted slide,
+/// so touying attaches it to the first content slide of its
 /// chapter — the page the footer progress uses as group boundary.
 ///
 /// With a deck title (`config-info(title:)`) the title slide shows *that*
 /// title and the first heading gets its own chapter slide, unless both texts
-/// are identical. Returns the rebuilt children plus the section titles.
+/// are identical (markers ignored). Returns the rebuilt children plus the
+/// section titles.
 #let _insert-section-slides(
   children,
   auto-title-slide,
@@ -368,13 +447,21 @@
               out.push(title-slide(title: child.body))
             } else {
               out.push(title-slide(title: config-title))
-              if chapter-slides and config-title != child.body {
-                out.push(chapter-slide(child.body))
+              let heading-title = _strip-subtitle(child.body)
+              if chapter-slides and config-title != heading-title {
+                out.push(
+                  chapter-slide(
+                    child.body,
+                    subtitle: _heading-subtitle(child.body),
+                  ),
+                )
               }
             }
           }
         } else if chapter-slides {
-          out.push(chapter-slide(child.body))
+          out.push(
+            chapter-slide(child.body, subtitle: _heading-subtitle(child.body)),
+          )
         }
         sections = sections + (child.body,)
       }
@@ -414,22 +501,6 @@
   dy: margin-top - 6pt,
   rect(width: width, height: height, fill: dhbw-red),
 )
-
-/// Flattens `body` to an array: `f` is called on every content element and
-/// its result is appended, so `f` returns `()` for elements it ignores.
-#let _scan(it, f) = {
-  if type(it) != content {
-    ()
-  } else {
-    f(it) + it.fields().values().map(v =>
-      if type(v) == content { _scan(v, f) } else if type(v) == array {
-        v.map(x => if type(x) == content { _scan(x, f) } else { () }).sum(
-          default: (),
-        )
-      } else { () }
-    ).sum(default: ())
-  }
-}
 
 /// True when the deck cites literature: a `@key`/`#cite(<key>)` target that is
 /// not a label defined in the body resolves against the bibliography.
@@ -471,7 +542,10 @@
 ///   first heading gets a chapter slide — unless both texts are identical.
 ///   `false` when you call `#title-slide(...)` yourself.
 /// - chapter-slides (bool): every later level-1 heading renders a
-///   `chapter-slide`. Title and chapter slides have no header or footer.
+///   `chapter-slide`. Title and chapter slides have no header or footer. Write
+///   `= Topic #subtitle[Chapter subtitle]` to give a chapter slide its
+///   subtitle line (invisible everywhere else; the title slide takes its
+///   subtitle from `config-info`).
 /// - sources (content, array, str, none): appended as the last slide. Pass
 ///   `bibliography("quellen.bib")` (cited in the deck) or a list of strings;
 ///   `none`, an empty list or an uncited bibliography adds nothing (unless
